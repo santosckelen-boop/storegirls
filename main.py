@@ -150,3 +150,18 @@ def exibir_menu():
             service.listar_produtos_inverso(),
             "Nenhum produto cadastrado.",
         )
+
+    elif opcao == 11:
+        imprimir_registros(
+            service.listar_produtos_ordenados_por_id(),
+            "Nenhum produto cadastrado.",
+        )
+
+    elif opcao == 12:
+        codigo = ler_inteiro("ID do produto: ")
+        produto = service.buscar_produto_binario(codigo)
+
+        if produto is None:
+            print("Produto nao encontrado pela Busca Binaria.")
+        else:
+            print(produto)
