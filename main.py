@@ -162,6 +162,6 @@ def exibir_menu():
         produto = service.buscar_produto_binario(codigo)
 
         if produto is None:
-            print("Produto nao encontrado pela Busca Binaria.")
+            print("Produto não encontrado pela Busca Binária.")
         else:
             print(produto)
