@@ -165,3 +165,87 @@ def exibir_menu():
             print("Produto não encontrado pela Busca Binária.")
         else:
             print(produto)
+            
+    elif opcao == 13:
+        codigo_cliente = ler_inteiro("ID do cliente: ")
+
+        if service.buscar_cliente(codigo_cliente) is None:
+            raise ValueError("Cliente nao encontrado.")
+
+        quantidade_de_itens = ler_inteiro("Quantos itens deseja informar? ")
+
+        if quantidade_de_itens <= 0:
+            raise ValueError("A venda deve possuir pelo menos um produto.")
+
+        itens = []
+
+        for numero in range(1, quantidade_de_itens + 1):
+            print(f"\nItem {numero}")
+            codigo_produto = ler_inteiro("ID do produto: ")
+            quantidade = ler_inteiro("Quantidade: ")
+
+            if codigo_produto <= 0:
+                raise ValueError("O ID do produto deve ser maior que zero.")
+
+            if quantidade <= 0:
+                raise ValueError("A quantidade vendida deve ser maior que zero.")
+
+            itens.append(
+                {
+                    "codigo_produto": codigo_produto,
+                    "quantidade": quantidade,
+                }
+            )
+
+        venda = service.realizar_venda(codigo_cliente, itens)
+        print(f"Venda realizada com sucesso: {venda}")
+
+    elif opcao == 14:
+        imprimir_registros(
+            service.listar_vendas(),
+            "Nenhuma venda realizada.",
+        )
+
+    elif opcao == 15:
+        print(service.primeira_venda())
+
+    elif opcao == 16:
+        total = service.valor_total_estoque()
+        print(f"Valor total do estoque: R$ {total:.2f}")
+
+    elif opcao == 17:
+        total = service.valor_total_vendas()
+        print(f"Valor total das vendas: R$ {total:.2f}")
+
+    elif opcao == 18:
+        resultados = service.clientes_e_valores_totais_gastos()
+
+        if len(resultados) == 0:
+            print("Nenhum cliente cadastrado.")
+        else:
+            for cliente, total in resultados:
+                print(f"{cliente} | Total gasto: R$ {total:.2f}")
+
+    elif opcao == 19:
+        resultado = service.cliente_que_mais_gastou()
+
+        if resultado is None:
+            print("Nenhuma venda encontrada para os clientes cadastrados.")
+        else:
+            cliente, total = resultado
+            print(f"Cliente que mais gastou: {cliente} | R$ {total:.2f}")
+
+    elif opcao == 20:
+        resultado = service.produto_mais_vendido()
+
+        if resultado is None:
+            print("Nenhum produto vendido foi encontrado.")
+        else:
+            produto, quantidade = resultado
+            print(f"Produto mais vendido: {produto} | Unidades: {quantidade}")
+
+    elif opcao == 21:
+        print(service.desfazer_ultima_operacao())
+
+    else:
+        print("Opcao invalida. Tente novamente.")
