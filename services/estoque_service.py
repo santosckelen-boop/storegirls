@@ -238,4 +238,76 @@ def listar_vendas(self):
 
 def primeira_venda(self):
         return self.vendas.front()
+
+def valor_total_estoque(self):
+        total = 0.0
+
+        for produto in self.produtos.listar():
+            total += produto.preco * produto.quantidade
+
+        return round(total, 2)
+
+def valor_total_vendas(self):
+        total = 0.0
+
+        for venda in self.vendas.listar():
+            total += venda.valor_total
+
+        return round(total, 2)
+
+def clientes_e_valores_totais_gastos(self):
+        totais_por_cliente = {}
+
+        for venda in self.vendas.listar():
+            total_atual = totais_por_cliente.get(venda.codigo_cliente, 0.0)
+            totais_por_cliente[venda.codigo_cliente] = total_atual + venda.valor_total
+
+        clientes_e_totais = []
+
+        for cliente in self.clientes.listar():
+            total = totais_por_cliente.get(cliente.codigo, 0.0)
+            clientes_e_totais.append((cliente, round(total, 2)))
+
+        return clientes_e_totais
+
+def cliente_que_mais_gastou(self):
+        if self.vendas.is_empty():
+            return None
+
+        maior_resultado = None
+
+        for cliente, total in self.clientes_e_valores_totais_gastos():
+            if maior_resultado is None or total > maior_resultado[1]:
+                maior_resultado = (cliente, total)
+
+        if maior_resultado is None or maior_resultado[1] == 0:
+            return None
+
+        return maior_resultado
+
+def produto_mais_vendido(self):
+        if self.vendas.is_empty():
+            return None
+
+        quantidades_vendidas = {}
+
+        for venda in self.vendas.listar():
+            for item in venda.itens:
+                codigo_produto = item["codigo_produto"]
+                quantidade_atual = quantidades_vendidas.get(codigo_produto, 0)
+                quantidades_vendidas[codigo_produto] = (
+                    quantidade_atual + item["quantidade"]
+                )
+
+        resultado = None
+
+        for produto in self.produtos.listar():
+            quantidade = quantidades_vendidas.get(produto.codigo, 0)
+
+            if quantidade > 0 and (resultado is None or quantidade > resultado[1]):
+                resultado = (produto, quantidade)
+
+        return resultado
+
+
     
