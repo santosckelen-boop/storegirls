@@ -309,5 +309,127 @@ def produto_mais_vendido(self):
 
         return resultado
 
+def desfazer_ultima_operacao(self):
+        operacao = self.historico.pop()
+        tipo = operacao["tipo"]
 
-    
+        if tipo == "cadastro_cliente":
+            cliente = operacao["cliente"]
+            self.clientes.remover(cliente.codigo)
+
+            try:
+                self.salvar_clientes()
+            except OSError:
+                self.clientes.inserir_posicao(operacao["posicao"], cliente)
+                self.historico.push(operacao)
+                raise
+
+            return f"Cadastro do cliente {cliente.nome} desfeito."
+
+        if tipo == "remocao_cliente":
+            cliente = operacao["cliente"]
+            self.clientes.inserir_posicao(operacao["posicao"], cliente)
+
+            try:
+                self.salvar_clientes()
+            except OSError:
+                self.clientes.remover(cliente.codigo)
+                self.historico.push(operacao)
+                raise
+
+            return f"Remocao do cliente {cliente.nome} desfeita."
+
+        if tipo == "cadastro_produto":
+            produto = operacao["produto"]
+            self.produtos.remover(produto.codigo)
+
+            try:
+                self.salvar_produtos()
+            except OSError:
+                self.produtos.inserir_posicao(operacao["posicao"], produto)
+                self.historico.push(operacao)
+                raise
+
+            return f"Cadastro do produto {produto.nome} desfeito."
+
+        if tipo == "remocao_produto":
+            produto = operacao["produto"]
+            self.produtos.inserir_posicao(operacao["posicao"], produto)
+
+            try:
+                self.salvar_produtos()
+            except OSError:
+                self.produtos.remover(produto.codigo)
+                self.historico.push(operacao)
+                raise
+
+            return f"Remocao do produto {produto.nome} desfeita."
+
+        if tipo == "atualizacao_estoque":
+            produto = operacao["produto"]
+            produto.atualizar_estoque(operacao["quantidade_anterior"])
+
+            try:
+                self.salvar_produtos()
+            except OSError:
+                produto.atualizar_estoque(operacao["quantidade_nova"])
+                self.historico.push(operacao)
+                raise
+
+            return f"Atualizacao do estoque de {produto.nome} desfeita."
+
+        if tipo == "venda":
+            venda = operacao["venda"]
+            ultima_venda = self.vendas.remover_ultima()
+
+            if ultima_venda.codigo != venda.codigo:
+                self.vendas.enqueue(ultima_venda)
+                self.historico.push(operacao)
+                raise ValueError("Nao foi possivel localizar a ultima venda.")
+
+            produtos_restaurados = []
+
+            for item in venda.itens:
+                produto = self.produtos.buscar(item["codigo_produto"])
+
+                if produto is None:
+                    for produto_anterior, quantidade in produtos_restaurados:
+                        produto_anterior.atualizar_estoque(
+                            produto_anterior.quantidade - quantidade
+                        )
+
+                    self.vendas.enqueue(venda)
+                    self.historico.push(operacao)
+                    raise ValueError(
+                        f"Produto {item['codigo_produto']} da venda nao foi encontrado."
+                    )
+
+                produto.atualizar_estoque(produto.quantidade + item["quantidade"])
+                produtos_restaurados.append((produto, item["quantidade"]))
+
+            try:
+                self.salvar_produtos()
+                self.salvar_vendas()
+            except OSError as erro:
+                for produto, quantidade in produtos_restaurados:
+                    produto.atualizar_estoque(produto.quantidade - quantidade)
+
+                self.vendas.enqueue(venda)
+                self.historico.push(operacao)
+
+                try:
+                    self.salvar_produtos()
+                except OSError:
+                    print("Aviso: nao foi possivel restaurar o arquivo de produtos.")
+
+                try:
+                    self.salvar_vendas()
+                except OSError:
+                    print("Aviso: nao foi possivel restaurar o arquivo de vendas.")
+
+                raise erro
+
+            return f"Venda {venda.codigo} desfeita."
+
+        self.historico.push(operacao)
+        raise ValueError("Operacao desconhecida no historico.")
