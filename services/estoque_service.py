@@ -142,3 +142,100 @@ def remover_produto(self, codigo):
         {"tipo": "remocao_produto", "produto": produto, "posicao": posicao}
     )
     return produto
+def gerar_proximo_codigo_venda(self):
+        return self._gerar_proximo_codigo(self.vendas.listar())
+
+def realizar_venda(self, codigo_cliente, itens):
+        codigo_cliente = self._validar_codigo(codigo_cliente, "ID do cliente")
+
+        if self.clientes.buscar(codigo_cliente) is None:
+            raise ValueError("Cliente nao encontrado.")
+
+        if not isinstance(itens, list) or len(itens) == 0:
+            raise ValueError("A venda deve possuir pelo menos um produto.")
+
+        quantidades_por_produto = {}
+
+        for item in itens:
+            if not isinstance(item, dict):
+                raise ValueError("Item de venda invalido.")
+
+            try:
+                codigo_produto = self._validar_codigo(
+                    item["codigo_produto"], "ID do produto"
+                )
+                quantidade = self._validar_quantidade(
+                    item["quantidade"], permite_zero=False
+                )
+            except KeyError:
+                raise ValueError("Item de venda invalido.")
+
+            quantidade_atual = quantidades_por_produto.get(codigo_produto, 0)
+            quantidades_por_produto[codigo_produto] = quantidade_atual + quantidade
+
+        itens_da_venda = []
+
+        for codigo_produto, quantidade in quantidades_por_produto.items():
+            produto = self.produtos.buscar(codigo_produto)
+
+            if produto is None:
+                raise ValueError(f"Produto {codigo_produto} nao encontrado.")
+
+            if produto.quantidade < quantidade:
+                raise ValueError(
+                    f"Estoque insuficiente para o produto {produto.nome}. "
+                    f"Disponivel: {produto.quantidade}."
+                )
+
+            itens_da_venda.append(
+                {
+                    "codigo_produto": codigo_produto,
+                    "quantidade": quantidade,
+                    "preco_unitario": produto.preco,
+                }
+            )
+
+        venda = Venda(
+            self.gerar_proximo_codigo_venda(),
+            codigo_cliente,
+            itens_da_venda,
+        )
+
+        for item in itens_da_venda:
+            produto = self.produtos.buscar(item["codigo_produto"])
+            produto.atualizar_estoque(produto.quantidade - item["quantidade"])
+
+        self.vendas.enqueue(venda)
+
+        try:
+            self.salvar_produtos()
+            self.salvar_vendas()
+        except OSError:
+            self.vendas.remover_ultima()
+
+            for item in itens_da_venda:
+                produto = self.produtos.buscar(item["codigo_produto"])
+                produto.atualizar_estoque(produto.quantidade + item["quantidade"])
+
+            self.salvar_produtos()
+            self.salvar_vendas()
+            raise
+
+        self.historico.push({"tipo": "venda", "venda": venda})
+        return venda
+
+def realizar_venda_exemplo(self, codigo_cliente, codigo_produto, quantidade):
+        itens = [
+            {
+                "codigo_produto": codigo_produto,
+                "quantidade": quantidade,
+            }
+        ]
+        return self.realizar_venda(codigo_cliente, itens)
+
+def listar_vendas(self):
+        return self.vendas.listar()
+
+def primeira_venda(self):
+        return self.vendas.front()
+    
