@@ -86,6 +86,8 @@ def exibir_menu():
     print("21 - Desfazer ultima operacao")
     print("0 - Sair")
 
+
+def executar_opcao(opcao, service):
     if opcao == 1:
         nome = ler_texto_obrigatorio("Nome do cliente: ")
         cliente = service.cadastrar_cliente(nome)
@@ -111,7 +113,6 @@ def exibir_menu():
         cliente = service.remover_cliente(codigo)
         print(f"Cliente removido com sucesso: {cliente}")
 
-    
     elif opcao == 5:
         nome = ler_texto_obrigatorio("Nome do produto: ")
         preco = ler_float("Preco do produto: R$ ")
@@ -165,7 +166,7 @@ def exibir_menu():
             print("Produto não encontrado pela Busca Binária.")
         else:
             print(produto)
-            
+
     elif opcao == 13:
         codigo_cliente = ler_inteiro("ID do cliente: ")
 
@@ -249,3 +250,35 @@ def exibir_menu():
 
     else:
         print("Opcao invalida. Tente novamente.")
+
+
+def main():
+    service = EstoqueService()
+
+    try:
+        while True:
+            limpar_terminal()
+            exibir_menu()
+
+            try:
+                opcao = ler_inteiro("Escolha uma opcao: ")
+
+                if opcao == 0:
+                    print("Sistema encerrado.")
+                    break
+
+                executar_opcao(opcao, service)
+
+            except (ValueError, IndexError) as erro:
+                print(f"Erro: {erro}")
+            except OSError as erro:
+                print(f"Erro ao acessar os arquivos: {erro}")
+
+            pausar()
+
+    except KeyboardInterrupt:
+        print("\nSistema encerrado pelo usuario.")
+
+
+if __name__ == "__main__":
+    main()
